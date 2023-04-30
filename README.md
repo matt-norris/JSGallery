@@ -35,4 +35,4 @@ Webpack for bundling the application
 npm for package management
 The artwork used in this application was obtained from Unsplash and is licensed under the Unsplash License.
 
-This application was created by [Your Name Here].
+This application was created by Matt Norris.
