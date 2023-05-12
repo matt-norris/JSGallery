@@ -37,9 +37,16 @@ function init() {
   
     createGallery();
 
-    addArtwork('/art.jpeg', 2, 1.5, new THREE.Vector3(0, 2, -9.74), new THREE.Euler(0, 0, 0));
-    addArtwork('/art.jpeg', 1.5, 1, new THREE.Vector3(9.74, 2, -5), new THREE.Euler(0, -Math.PI / 2, 0));
-    addArtwork('/art.jpeg', 1.5, 1, new THREE.Vector3(-9.74, 2, 5), new THREE.Euler(0, Math.PI / 2, 0));
+    addArtwork('/video-game-gallery/Assets/art.jpeg', 2, 1.5, new THREE.Vector3(0, 2, -9.74), new THREE.Euler(0, 0, 0));
+    addArtwork('/video-game-gallery/Assets/art.jpeg', 1.5, 1, new THREE.Vector3(9.74, 2, -5), new THREE.Euler(0, -Math.PI / 2, 0));
+    addArtwork('/video-game-gallery/Assets/art.jpeg', 1.5, 1, new THREE.Vector3(-9.74, 2, 5), new THREE.Euler(0, Math.PI / 2, 0));
+
+
+     // Add decorations to the gallery
+    addBench(new THREE.Vector3(5, 0, 8), new THREE.Euler(0, 0, 0));
+    addBench(new THREE.Vector3(-5, 0, -8), new THREE.Euler(0, 0, 0));
+    addPlant(new THREE.Vector3(-9, 0, -3), new THREE.Euler(0, 0, 0));
+    addPlant(new THREE.Vector3(9, 0, 3), new THREE.Euler(0, 0, 0));
 
     setupControls();
     setupMouseControls();
@@ -100,14 +107,18 @@ function createGallery() {
     // Create the gallery walls, floor, and ceiling
     // Create the floor
     const floorGeometry = new THREE.PlaneGeometry(20, 20);
-    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const loader = new THREE.TextureLoader();
+    const floorTexture = loader.load('/video-game-gallery/Assets/d.jpeg');
+    const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0;
     scene.add(floor);
 
     // Create gallery walls
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const wallLoader = new THREE.TextureLoader();
+    const wallTexture = wallLoader.load('/video-game-gallery/Assets/wall.jpeg');
+    const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture });
     const wallHeight = 4;
 
     const wall1Geometry = new THREE.BoxGeometry(20, wallHeight, 0.5);
@@ -170,11 +181,11 @@ function createGallery() {
   function setupControls() {
     // Set up keyboard controls
     window.addEventListener('keydown', onKeyDown);
-window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('keyup', onKeyUp);
   }
 
   const moveSpeed = 0.1;
-const keysPressed = {};
+  const keysPressed = {};
   function onKeyDown(event) {
     keysPressed[event.key] = true;
   }
@@ -214,6 +225,91 @@ function onMouseMove(event) {
   mouseX = event.clientX - window.innerWidth / 2;
   mouseY = event.clientY - window.innerHeight / 2;
 }
+
+function addBench(position, rotation) {
+  const benchMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color
+
+  // Bench legs
+  const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5);
+  for (const [x, z] of [[-1, -0.5], [1, -0.5], [-1, 0.5], [1, 0.5]]) {
+      const leg = new THREE.Mesh(legGeometry, benchMaterial);
+      leg.position.set(x, 0.25, z);
+      scene.add(leg);
+  }
+
+  // Bench seat
+  const seatGeometry = new THREE.BoxGeometry(2.2, 0.1, 1.2);
+  const seat = new THREE.Mesh(seatGeometry, benchMaterial);
+  seat.position.y = 0.6; // 0.5 (height of legs) + 0.1 (half of seat height)
+  scene.add(seat);
+
+  // Bench back
+  const backGeometry = new THREE.BoxGeometry(2.2, 0.6, 0.1);
+  const back = new THREE.Mesh(backGeometry, benchMaterial);
+  back.position.set(0, 0.85, -0.55); // 0.6 (height of seat) + 0.25 (half of back height)
+  scene.add(back);
+
+  // Group all bench parts
+  const bench = new THREE.Group();
+  bench.add(...scene.children.splice(-7)); // remove last 7 objects (1 seat, 1 back, 4 legs) and add them to the group
+  bench.position.copy(position);
+  bench.rotation.copy(rotation);
+  scene.add(bench);
+}
+
+function addPlant(position, rotation) {
+  const loader = new THREE.TextureLoader();
+
+  // Pot
+  const potMaterial = new THREE.MeshStandardMaterial({ color: 0x654321,
+    map: loader.load('/video-game-gallery/Assets/clay.jpeg')
+   }); // Dark brown color
+  const potGeometry = new THREE.CylinderGeometry(0.3, 0.4, 0.4, 32);
+  const pot = new THREE.Mesh(potGeometry, potMaterial);
+  pot.position.y = 0.2; // half of pot height
+
+  // Plant
+  const plantMaterial = new THREE.MeshStandardMaterial({ 
+    map: loader.load('/video-game-gallery/Assets/leaf.avif'), // The texture should be an image of a leaf with a transparent background
+    side: THREE.DoubleSide, // Render both sides of the geometry
+    transparent: true, // Enable transparency
+    alphaTest: 0.5, // Pixels with lower alpha values will be discarded
+  });
+
+  const leafGeometry = new THREE.PlaneGeometry(0.5, 0.5); // A plane to represent a single leaf
+  const plant = new THREE.Group(); // A group to hold all leaves
+
+  // Create leaves
+  for (let i = 0; i < 100; i++) {
+    const leaf = new THREE.Mesh(leafGeometry, plantMaterial);
+    leaf.position.set(Math.random() - 0.5, Math.random() * 0.5, Math.random() - 0.5);
+    leaf.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
+    plant.add(leaf);
+  }
+
+  plant.position.y = 0.9; // 0.4 (height of pot) + 0.5 (half of plant height)
+
+  // Group pot and plant
+  const pottedPlant = new THREE.Group();
+
+  // Stem
+const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color
+const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 32); // Adjust the size as needed
+const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+stem.position.y = 0.45; // half of stem height
+
+// ...
+
+pottedPlant.add(pot, stem, plant); // Add the stem to the pottedPlant group
+
+
+  pottedPlant.add(pot, plant);
+  pottedPlant.position.copy(position);
+  pottedPlant.rotation.copy(rotation);
+  scene.add(pottedPlant);
+}
+
+
 
 init();
 animate();
